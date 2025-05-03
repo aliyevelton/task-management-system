@@ -18,19 +18,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($current_password)) {
         $errors[] = 'Current password is required.';
     }
-    if (empty($new_password)) {
-        $errors[] = 'New password is required.';
+   // Validate password
+if (empty($new_password)) {
+    $errors[] = 'New password is required.';
+} else {
+    if (strlen($new_password) < 8) {
+        $errors[] = 'New password must be at least 8 characters long.';
     }
-    if (empty($confirm_password)) {
-        $errors[] = 'Confirm password is required.';
+
+    if (!preg_match('/[A-Z]/', $new_password)) {
+        $errors[] = 'New password must contain at least one uppercase letter.';
     }
-    if ($new_password !== $confirm_password) {
-        $errors[] = 'New password and confirm password do not match.';
+
+    if (!preg_match('/[a-z]/', $new_password)) {
+        $errors[] = 'New password must contain at least one lowercase letter.';
     }
-    // Check password strength
-    if (!preg_match('/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d\W]{6,}$/', $new_password)) {
-    $errors[] = 'Password must be at least 6 characters long and include at least one letter, one number, and one special character.';
+
+    if (!preg_match('/[0-9]/', $new_password)) {
+        $errors[] = 'New password must contain at least one number.';
     }
+
+    if (!preg_match('/[\W_]/', $new_password)) {
+        $errors[] = 'New password must contain at least one special character.';
+    }
+}
+
+if (empty($confirm_password)) {
+    $errors[] = 'Confirm password is required.';
+}
+
+if ($new_password !== $confirm_password) {
+    $errors[] = 'New password and confirm password do not match.';
+}
+
 
     if (empty($errors)) {
         // Check if the current password is correct

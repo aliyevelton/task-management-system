@@ -28,6 +28,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($new_password !== $confirm_password) {
         $errors[] = 'New password and confirm password do not match.';
     }
+    if (empty($new_password)) {
+        $errors[] = 'New password is required.';
+    } else {
+        if (
+           strlen($new_password) < 8 ||
+           !preg_match('/[A-Z]/', $new_password) ||
+           !preg_match('/[a-z]/', $new_password) ||
+           !preg_match('/[0-9]/', $new_password) ||
+           !preg_match('/[\W_]/', $new_password)
+    ) {
+        $errors[] = 'Password must be at least 8 characters and include uppercase, lowercase, number and symbol.';
+    }
+    }
+
 
     if (empty($errors)) {
         // Check if the current password is correct

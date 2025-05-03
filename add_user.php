@@ -16,6 +16,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Collect all form data
     $user_first_name = trim($_POST['user_first_name']);
     $user_last_name = trim($_POST['user_last_name']);
     $department_id = trim($_POST['department_id']);
@@ -33,51 +34,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $message = 'All fields are required.';
     } elseif (!filter_var($user_email_address, FILTER_VALIDATE_EMAIL)) {
         $message = 'Invalid email format.';
+    } elseif (strlen($user_email_password) < 8) {
+        $message = 'Password must be at least 8 characters long.';
+    } elseif (!ctype_digit($user_contact_no)) {
+        $message = 'Phone number must contain digits only (no letters or symbols).';
     } elseif ($user_image['error'] !== UPLOAD_ERR_OK) {
         $message = 'Error uploading image.';
     } else {
-        // Check if email already exists
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM task_user WHERE user_email_address = :user_email_address");
-        $stmt->execute(['user_email_address' => $user_email_address]);
-        $count = $stmt->fetchColumn();
-
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM task_user WHERE user_contact_no = :user_contact_no");
-        $stmt->execute(['user_contact_no' => $user_contact_no]);
-        $countPhone = $stmt->fetchColumn();
-
-        if ($count > 0) {
+        // Check if the email is already taken, excluding the admin email
+        if ($user_email_address == 'aliyevelton2@gmail.com') {
             $message = 'Email already exists.';
-        } else if ($countPhone > 0) {
-            $message = 'Contact number already exists.';
         } else {
-            // Hash the password
-            $hashed_password = password_hash($user_email_password, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM task_user WHERE user_email_address = :user_email_address");
+            $stmt->execute(['user_email_address' => $user_email_address]);
+            $count = $stmt->fetchColumn();
 
-            // Handle image upload
-            $image_path = 'uploads/' . basename($user_image['name']);
-            if (move_uploaded_file($user_image['tmp_name'], $image_path)) {
-                // Insert into database
-                try {
-                    $stmt = $pdo->prepare("INSERT INTO task_user (user_first_name, user_last_name, department_id, user_email_address, user_email_password, user_contact_no, user_date_of_birth, user_gender, user_address, user_status, user_image, user_added_on, user_updated_on) VALUES (:user_first_name, :user_last_name, :department_id, :user_email_address, :user_email_password, :user_contact_no, :user_date_of_birth, :user_gender, :user_address, :user_status, :user_image, NOW(), NOW())");
-                    $stmt->execute([
-                        'user_first_name'       => $user_first_name,
-                        'user_last_name'        => $user_last_name,
-                        'department_id'         => $department_id,
-                        'user_email_address'    => $user_email_address,
-                        'user_email_password'   => $hashed_password,
-                        'user_contact_no'       => $user_contact_no,
-                        'user_date_of_birth'    => $user_date_of_birth,
-                        'user_gender'           => $user_gender,
-                        'user_address'          => $user_address,
-                        'user_status'           => $user_status,
-                        'user_image'            => $image_path
-                    ]);
-                    header('location:user.php');
-                } catch (PDOException $e) {
-                    $message = 'Database error: ' . $e->getMessage();
-                }
+            if ($count > 0) {
+                $message = 'Email already exists.';
             } else {
-                $message = 'Failed to upload image.';
+                // Hash the password
+                $hashed_password = password_hash($user_email_password, PASSWORD_DEFAULT);
+
+                // Handle image upload
+                $image_path = 'uploads/' . basename($user_image['name']);
+                if (move_uploaded_file($user_image['tmp_name'], $image_path)) {
+                    // Insert into database
+                    try {
+                        $stmt = $pdo->prepare("INSERT INTO task_user (user_first_name, user_last_name, department_id, user_email_address, user_email_password, user_contact_no, user_date_of_birth, user_gender, user_address, user_status, user_image, user_added_on, user_updated_on) VALUES (:user_first_name, :user_last_name, :department_id, :user_email_address, :user_email_password, :user_contact_no, :user_date_of_birth, :user_gender, :user_address, :user_status, :user_image, NOW(), NOW())");
+                        $stmt->execute([
+                            'user_first_name'       => $user_first_name,
+                            'user_last_name'        => $user_last_name,
+                            'department_id'         => $department_id,
+                            'user_email_address'    => $user_email_address,
+                            'user_email_password'   => $hashed_password,
+                            'user_contact_no'       => $user_contact_no,
+                            'user_date_of_birth'    => $user_date_of_birth,
+                            'user_gender'           => $user_gender,
+                            'user_address'          => $user_address,
+                            'user_status'           => $user_status,
+                            'user_image'            => $image_path
+                        ]);
+                        header('location:user.php');
+                    } catch (PDOException $e) {
+                        $message = 'Database error: ' . $e->getMessage();
+                    }
+                } else {
+                    $message = 'Failed to upload image.';
+                }
             }
         }
     }
